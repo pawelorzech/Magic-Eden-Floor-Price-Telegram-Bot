@@ -1,11 +1,9 @@
 import logging
 from time import sleep
-from typing import Collection
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-import json
+from telegram.ext import Updater, CommandHandler
 import requests
+import pprint
 
-# my user id = 5298831332
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -15,10 +13,12 @@ global collection
 collection = {"5298831332": {"united_ape_nation": 0.0}}
 global updateRate
 updateRate = 30
-botToken = '<ADD YOUR OWN TELEGRAM BOT TOKEN'
+botToken = '5197120221:AAEQkrp7S4aDw5XoV1Na2wS7tum5oreXEhw'
 
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
+def store_dict(fname, dic):
+    with open(fname, "w") as f:
+        f.write(pprint.pformat(dic, indent=4, sort_dicts=False))
+
 def test(update, context):
     """Send a message when the command /start is issued."""
     update.message.reply_text(str(update.message.chat.id))
@@ -45,7 +45,8 @@ def addCollection(update, context):
                 collection[userID][newCol] = 0.0
             else:
                 collection[userID][newCol] = float(context.args[1])
-
+                
+            store_dict()
             update.message.reply_text("Collection added for tracking.")
         else:
             update.message.reply_text("Collection already tracked.")
@@ -55,6 +56,7 @@ def addCollection(update, context):
             collection[userID][newCol] = 0.0
         else:
             collection[userID][newCol] = float(context.args[1])
+        store_dict()
         
 def changeFloor(update, context):
     newCol = (context.args[0]).split("/")[-1]
@@ -64,6 +66,7 @@ def changeFloor(update, context):
         if newCol in collection[userID] and len(context.args) > 1:
             collection[userID][newCol] = float(context.args[1])
             update.message.reply_text("Floor price changed.")
+            store_dict()
         else:
             update.message.reply_text("This collection is not tracked.")
     else:
@@ -80,6 +83,8 @@ def removeCollection(update, context):
         else:
             collection[userID].pop(newCol)
             update.message.reply_text("Collection removed from tracking.")
+            store_dict()
+    
 
 def getCollection(update, context):
     ret_str = ""
@@ -100,59 +105,27 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def newPing(context):
-    #context.bot.send_message(context.job.context, text=checkFloor(userID = context))
     context.bot.send_message(context.job.context, text=checkFloor(userID = str(context.job.context)))
 
 def startTimer(update, context):
     context.job_queue.run_repeating(newPing, updateRate, context=update.message.chat_id, name=str(update.message.chat.id))
 
-#def stopTimer(bot, update, job_queue):
 def stopTimer(update, context):
-    #context.job_queue.stop()
     for job in context.job_queue.get_jobs_by_name(str(update.message.chat.id)):
         job.schedule_removal()
     update.message.reply_text("Job removed.")
 
+def store_dict():
+    with open("trackedData.json", "w") as f:
+        f.write(pprint.pformat(collection, indent=4, sort_dicts=False))
 
-
-def main():
-    """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
-    updater = Updater(botToken, use_context=True)
-
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
-
-    # on different commands - answer in Telegram
-    #dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("test", test))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("id", id))
-    dp.add_handler(CommandHandler('addCollection', addCollection))
-    dp.add_handler(CommandHandler('removeCollection', removeCollection))
-    dp.add_handler(CommandHandler('getCollection', getCollection))
-    dp.add_handler(CommandHandler('changeFloor', changeFloor))
-
-    dp.add_handler(CommandHandler('start', startTimer, pass_job_queue=True))
-    dp.add_handler(CommandHandler('stop', stopTimer, pass_job_queue=True))
-
-
-    # log all errors
-    dp.add_error_handler(error)
-
-    # Start the Bot
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
-
-    while True:
-        sleep(5)
-
+def load_file():
+    try:
+        with open("trackedData.json", "r") as f:
+            dic = eval(f.read())
+    except:
+        dic = {}
+    return dic
 
 def checkFloor(userID):
     res = []
@@ -171,5 +144,33 @@ def checkFloor(userID):
 
     return '\n'.join(map(str, res))
 
+def main():
+    updater = Updater(botToken, use_context=True)
+
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("test", test))
+    dp.add_handler(CommandHandler("help", help))
+    dp.add_handler(CommandHandler("id", id))
+    dp.add_handler(CommandHandler('addCollection', addCollection))
+    dp.add_handler(CommandHandler('removeCollection', removeCollection))
+    dp.add_handler(CommandHandler('getCollection', getCollection))
+    dp.add_handler(CommandHandler('changeFloor', changeFloor))
+    dp.add_handler(CommandHandler('start', startTimer, pass_job_queue=True))
+    dp.add_handler(CommandHandler('stop', stopTimer, pass_job_queue=True))
+
+
+    dp.add_error_handler(error)
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
+
+    while True:
+        sleep(5)
+
 if __name__ == '__main__':
+    collection = load_file()
     main()
