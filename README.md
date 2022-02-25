@@ -8,7 +8,7 @@ An easy-to-use Telegram bot code for notifications when the floor price of a pro
 - Make sure to have Python 3 installed.
 - Run the following command in the project directory to install the required python libraries:
 `pip install -r requirement.txt`
-- Initialize a bot on Telegram. Use @BotFather to do this. It will give you a bot access token. Paste the bot token into line 16 of botScript.py.
+- Initialize a bot on Telegram. Use `@BotFather` to do this. It will give you a bot access token. Paste the bot token into line 16 of botScript.py.
 - Run the botScript.py, and your bot will be online!
 - Use /help for all available commands.
 
