@@ -12,8 +12,10 @@ logger = logging.getLogger(__name__)
 global collection
 collection = {"5298831332": {"united_ape_nation": 0.0}}
 global updateRate
-updateRate = 30
-botToken = '5197120221:AAEQkrp7S4aDw5XoV1Na2wS7tum5oreXEhw'
+updateRate = 60
+botToken = 'heregoesthetoken!'
+
+
 
 def store_dict(fname, dic):
     with open(fname, "w") as f:
@@ -105,7 +107,7 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 def newPing(context):
-    context.bot.send_message(context.job.context, text=checkFloor(userID = str(context.job.context)))
+    context.bot.send_message(context.job.context, text=checkFloor(userID = str(context.job.context)), disable_web_page_preview=True)
 
 def startTimer(update, context):
     context.job_queue.run_repeating(newPing, updateRate, context=update.message.chat_id, name=str(update.message.chat.id))
@@ -137,8 +139,10 @@ def checkFloor(userID):
             headers = {}
             response = requests.request("GET", url, headers=headers, data=payload).json()
             prc = response['floorPrice']/1000000000
+            volume = response['volumeAll']/1000000000
+            listedcount = response['listedCount']
             if collection[userID][key] <= 0.0 or (collection[userID][key] > 0.0 and prc <= collection[userID][key]):
-                res.append(key.replace("_", " ").title() + ": " + str(prc) + " SOL")
+                res.append(key.replace("_", " ").title() + ": " + str(prc) + " SOL" + "\nVolume: " + str(volume) + " SOL " + "\nListed count: " + str(listedcount) + "\nLink: https://magiceden.io/marketplace/" + key + "\n")
     else:
         res.append("You have nothing to track.")
 
